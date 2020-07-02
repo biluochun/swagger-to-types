@@ -22,7 +22,13 @@ export class ApiList extends BaseTreeProvider<ApiListItem> {
       if (!this.treeList.length) {
         getSwaggerJson(swaggerJsonConfig.url)
           .then(res => {
-            this.treeList = parseSwaggerJson(res)
+            try {
+              this.treeList = parseSwaggerJson(res)
+            } catch (e) {
+              $ext.log.error(`parseSwaggerJson => ${e}`)
+              resolve([])
+              return
+            }
             resolve(this.treeList)
           })
           .catch(() => {

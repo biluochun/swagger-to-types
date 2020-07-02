@@ -2,8 +2,6 @@ export function parseSwaggerJson(swaggerJson: SwaggerJson): SwaggerJsonTreeItem[
   const { tags, paths, definitions } = swaggerJson
   let res: SwaggerJsonTreeItem[] = []
 
-  // console.log(swaggerJson)
-
   const tagsMap = {}
   if (tags && tags.length) {
     res = tags.map((v, i) => {
@@ -87,8 +85,10 @@ export function parseSwaggerJson(swaggerJson: SwaggerJson): SwaggerJsonTreeItem[
 
 // 递归获取 ref
 export function getSwaggerJsonRef(schema: SwaggerJsonSchema, definitions: SwaggerJsonDefinitions): any {
-  const { originalRef } = schema
-  const ref = definitions[originalRef]
+  let originalRefKey = 'originalRef'
+  if (!schema.originalRef && schema.$ref) originalRefKey = '$ref' // 发现key是$ref的情况
+  const ref = definitions[originalRefKey]
+  if (!ref) return {}
   const propertiesList: TreeInterfacePropertiesItem[] = []
   const { properties, required = [] } = ref
 
@@ -103,23 +103,23 @@ export function getSwaggerJsonRef(schema: SwaggerJsonSchema, definitions: Swagge
         titRef: val.title,
       }
 
-      if (val.originalRef) {
+      if (val[originalRefKey]) {
         obj.item = getSwaggerJsonRef(val as SwaggerJsonSchema, definitions)
       }
       if (val.items) {
         let schema
         if (val.items.schema) {
           schema = val.items.schema
-        } else if (val.items.originalRef) {
+        } else if (val.items[originalRefKey]) {
           schema = val.items
         } else if (val.items.type) {
           obj.itemsType = val.items.type
         }
 
-        // if (schema.originalRef == originalRef) {
-        //   console.log('debug--3', { originalRef, ref, val, schema })
+        // if (schema[originalRefKey] == originalRefKey) {
+        //   console.log('debug--3', { originalRefKey, ref, val, schema })
         // }
-        if (schema && schema.originalRef != originalRef) {
+        if (schema && schema[originalRefKey] != originalRefKey) {
           obj.item = getSwaggerJsonRef(schema, definitions)
         }
       }
